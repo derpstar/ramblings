@@ -1,0 +1,79 @@
+---
+- name: Update Java on AWS DLC nodes
+  hosts: dlc_nodes
+  become: yes
+  tasks:
+  
+  - name: Remove existing Java version
+    yum:
+      name: "java-1.8.0-openjdk*"
+      state: absent
+
+  - name: Install Java 11
+    yum:
+      name:
+        - java-11-openjdk
+        - java-11-openjdk-devel
+      state: present
+
+  - name: Set Java 11 as default
+    alternatives:
+      name: java
+      path: /usr/lib/jvm/jre-11-openjdk/bin/java
+
+  - name: Verify Java Version
+    command: java -version
+    register: result
+    changed_when: false
+    
+  - name: Output Java version
+    debug:
+      var: result.stderr_lines
+
+
+# use ec2. py to get instances...
+# https://raw.githubusercontent.com/ansible/ansible/devel/contrib/inventory/
+#ansible-playbook -i inventory.yml patch_java.yml
+
+
+---
+- name: Update Java on AWS DLC nodes using .bin file
+  hosts: dlc_nodes
+  become: yes
+  vars:
+    java_bin_url: "http://your-url-to-java-bin/java-version.bin"
+    java_bin_local_path: "/tmp/java-version.bin"
+    java_install_path: "/opt/java-version"
+  
+  tasks:
+  
+  - name: Download Java .bin file
+    get_url:
+      url: "{{ java_bin_url }}"
+      dest: "{{ java_bin_local_path }}"
+      mode: '0755'
+    
+  - name: Make the .bin file executable
+    file:
+      path: "{{ java_bin_local_path }}"
+      mode: '0755'
+    
+  - name: Install Java from .bin
+    command:
+      cmd: "{{ java_bin_local_path }} -prefix {{ java_install_path }}"
+      creates: "{{ java_install_path }}/bin/java"
+
+  # Optional: Update alternatives if you want this Java to be the default
+  - name: Set newly installed Java as default
+    alternatives:
+      name: java
+      path: "{{ java_install_path }}/bin/java"
+    
+  - name: Verify Java Version
+    command: java -version
+    register: result
+    changed_when: false
+    
+  - name: Output Java version
+    debug:
+      var: result.stderr_lines
