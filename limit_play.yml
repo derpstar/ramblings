@@ -1,0 +1,12 @@
+- hosts: all
+  tasks:
+    - name: Set fact for AWS hosts
+      set_fact:
+        is_aws_host: true
+      when: "'aws' in group_names"
+
+    - name: Apply template for AWS hosts
+      template:
+        src: "/path/to/aws_logging_template.j2"
+        dest: "/path/to/destination"
+      when: is_aws_host is defined and is_aws_host
