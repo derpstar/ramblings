@@ -1,0 +1,28 @@
+---
+- name: Update OS on RHEL based systems
+  hosts: my_hosts
+  become: yes
+
+  tasks:
+    - name: Check for stalled OS updates (Red Hat 8.x)
+      command: dnf updateinfo
+      register: update_info
+      changed_when: false
+      ignore_errors: yes
+      when: ansible_distribution == 'RedHat' and ansible_distribution_major_version|int >= 8
+
+    - name: Clean package cache (Red Hat 8.x)
+      command: dnf clean all
+      when: update_info.failed and ansible_distribution == 'RedHat' and ansible_distribution_major_version|int >= 8
+
+    - name: Update the system using dnf (Red Hat 8.x)
+      command: dnf -y update
+      when: ansible_distribution == 'RedHat' and ansible_distribution_major_version|int >= 8
+
+    - name: Clean package cache (Red Hat 7.x)
+      command: yum clean all
+      when: ansible_distribution == 'RedHat' and ansible_distribution_major_version|int == 7
+
+    - name: Update the system using yum (Red Hat 7.x)
+      command: yum -y update
+      when: ansible_distribution == 'RedHat' and ansible_distribution_major_version|int == 7
