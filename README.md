@@ -1,2 +1,2 @@
 # ramblings
-random stuff
+Some notes for AWS, Terraform and Ansible
